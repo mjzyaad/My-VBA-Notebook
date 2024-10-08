@@ -244,3 +244,128 @@ Else
 .
 End if
 ```
+
+### Collections
+It is better to use a dictionary rather than a collection, for the following reasons:
+- Performance.
+- Richer functionalities.
+- Everything you can do with a collection, you can do with a dictionary as well.
+
+Reference: https://www.experts-exchange.com/articles/3391/Using-the-Dictionary-Class-in-VBA.html
+
+### Dictionaries
+```VB
+Option Explicit
+
+' Add reference: Microsoft Scripting Runtime
+Public Sub DictionaryTest()
+    Dim oDict As Scripting.Dictionary ' Early binding
+    Set oDict = New Scripting.Dictionary
+
+    oDict("Apple") = 5
+    oDict("Orange") = 50
+    oDict("Peach") = 44
+    oDict("Banana") = 47
+    oDict("Plum") = 48
+    oDict.Add Key:="Pear", Item:="22"
+    Call oDict.Add("Strawberry", 11)
+
+    Debug.Print ("There are " & oDict.Count & " items")
+    oDict.Remove "Strawberry"
+    Debug.Print ("There are " & oDict.Count & " items")
+
+    ' Checks if an item exists by the key
+    If Not oDict.Exists("Grapes") Then
+        Debug.Print ("This dictionary does not contain grapes")
+    End If
+
+    Set oDict = Nothing
+End Sub
+```
+
+- Adding the same key more than once, will result in an error.
+- If you use the Item property to attempt to set an item for a non-existent key, the Dictionary will implicitly add that
+item along with the indicated key.
+- Similarly, if you attempt to retrieve an item associated with a non-existent key, the Dictionary will add a blank item,
+associated with that key.
+- CompareMode is used to compare the keys: Binary vs Text Compare.
+
+### Traversing the Dictionary
+```VB
+Dim key As Variant
+
+For Each key In oDict.Keys
+    Debug.Print key & " - " & oDict(key)
+Next
+```
+
+### Removing a key
+The Remove method removes the item associated with the specified key from the Dictionary, as well as that key.
+```VB
+MyDictionary.Remove "SomeKey"
+```
+
+### Clear the dictionary
+```VB
+MyDictionary.RemoveAll
+```
+
+## Boosting Performance
+### Speeding the read and write process from cells
+- Read data in ranges.
+- Turn screen updating off
+- Turn calculation off
+- Read and write the range at once
+
+```VB
+Sub Datechange()
+    On Error GoTo error_handler
+    
+    Dim initialMode As Long
+    
+    initialMode = Application.Calculation
+    Application.Calculation = xlCalculationManual
+    Application.ScreenUpdating = False
+
+    Dim data As Variant
+    Dim i As Long
+
+    'copy range to an array
+    data = Range("D2:D" & Range("D" & Rows.Count).End(xlUp).Row)
+
+    For i = LBound(data, 1) To UBound(data, 1)
+        If IsDate(data(i, 1)) Then data(i, 1) = CDate(data(i, 1))
+    Next i
+
+    'copy array back to range
+    Range("D2:D" & Range("D" & Rows.Count).End(xlUp).Row) = data
+
+exit_door:
+    Application.ScreenUpdating = True Application.Calculation = initialMode
+    Exit Sub
+
+error_handler:
+    'if there is an error, let the user know
+    MsgBox "Error encountered on line " & i + 1 & ": " & Err.Description
+    Resume exit_door 'don't forget the exit door to restore the calculation mode
+End Sub
+```
+
+### Clearing Ranges
+When clearing cells in Excel and we already know which range needs to be cleared, it is much faster to use the .Clear method on the predefined range, rather than clearing cell by cell.
+```VB
+Thisworkbook.Sheets(1).Range("A1:J999").Clear
+```
+
+### Calculating elapsed time in seconds
+```VB
+Private Sub Process()
+    Dim tickStart As Date: tickStart = Now()
+    Dim tickEnd As Date
+    
+    ' Processing goes here
+    tickEnd = Now()
+    
+    MsgBox DateDiff("s", tickStart, tickEnd)
+End Sub
+```
