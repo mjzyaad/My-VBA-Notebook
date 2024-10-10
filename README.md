@@ -369,3 +369,325 @@ Private Sub Process()
     MsgBox DateDiff("s", tickStart, tickEnd)
 End Sub
 ```
+
+### Mergesort
+```VB
+Option Explicit
+
+Const MaxN As Long = 100000
+Dim a(1 To MaxN) As Long
+Dim tmp(1 To MaxN) As Long
+
+Private Sub Mergesort(ByVal l As Long, ByVal r As Long)
+    If (r > l) Then
+        Dim mid As Long: mid = (r + l) \ 2
+        Call Mergesort(l, mid)
+        Call Mergesort(mid + 1, r)
+    
+        Dim i As Long, j As Long, k As Long
+        i = l
+        j = mid + 1
+        k = 1
+        
+        Do While (i <= mid And j <= r)
+            If (a(i) > a(j)) Then
+                tmp(k) = a(j)
+                j = j + 1
+            Else
+                tmp(k) = a(i)
+                i = i + 1
+            End If
+            
+            k = k + 1
+        Loop
+        
+        Do While (i <= mid)
+            tmp(k) = a(i)
+            i = i + 1
+            k = k + 1
+        Loop
+        
+        Do While (j <= r)
+            tmp(k) = a(j)
+            j = j + 1
+            k = k + 1
+        Loop
+        
+        For i = 1 To r - l + 1
+            a(l + i - 1) = tmp(i)
+        Next i
+    End If
+End Sub
+
+Public Sub Test()
+    Dim i As Long
+    Dim tickStart As Date: tickStart = Now()
+    Dim tickEnd As Date
+    
+    For i = 1 To MaxN
+        a(i) = Rnd * MaxN
+    Next i
+    
+    Call Mergesort(1, MaxN)
+    
+    For i = 2 To MaxN
+        Debug.Assert a(i) >= a(i - 1)
+    Next i
+    
+    tickEnd = Now()
+    Debug.Print "Time taken: " & DateDiff("s", tickStart, tickEnd)
+End Sub
+```
+
+## File Handling
+### Selecting a file via the File Dialog
+The File Dialog is used to select files by browsing the computer. It also allows multiselect, give the possibility to add filters so that we have a choice of which kind of files can be selected, etc...
+
+```VB
+Sub UseFileDialogOpen()
+    Dim lngCount As Long
+    
+    ' Open the file dialog
+    With Application.FileDialog(msoFileDialogOpen)
+        ' .AllowMultiSelect = True
+        .AllowMultiSelect = False
+        .Show
+        .Filters.Add "Txt", "*.txt"
+        
+        If .SelectedItems.Count = 1 Then
+            ThisWorkbook.Sheets("Instructions").Cells(15, 6).Value = .SelectedItems(1)
+        Else
+            ThisWorkbook.Sheets("Instructions").Range("G15:G15").Clear
+        End If
+        ' Display paths of each file selected
+        ' For lngCount = 1 To .SelectedItems.Count
+        ' MsgBox .SelectedItems(lngCount)
+        ' Next lngCount
+    End With
+End Sub
+```
+
+### Reading from an input file
+```VB
+Public Sub ReadFile()
+    Dim myfile As String: myfile = "..."
+    Dim textline As String
+    Dim linecount As Long: linecount = 0
+    
+    Close #1
+    Open myfile For Input As #1
+    
+    Do Until EOF(1)
+        Line Input #1, textline
+        linecount = linecount + 1
+    Loop
+    
+    Debug.Print linecount
+    Close #1
+End Sub
+```
+
+### Writing to an output file
+```VB
+Public Sub WriteToFile()
+    Dim myfile As String: myfile = "c:\users\x76544\try.txt"
+    Close #1
+
+    Open myfile For Output As #1
+    Print #1, "This is a test" ' Outputs to file without double quotes
+    Write #1, "This is a test" ' Outputs to file with double quotes
+    
+    Close #1
+End Sub
+```
+
+### Getting a file extension
+```VB
+    Set oFs = New FileSystemObject
+    .
+    .
+    For Each oFile In currentFolder.Files
+    .
+    .
+    Debug.Print oFs.GetExtensionName(oFile.path)
+Next
+```
+
+### Recursively get a list of files
+Firstly, we should add a reference to the DLL “Microsoft Scripting Runtime”.
+This DLL exposes the “FileSystemObject” class, which will be used for traversing the folders recursively.
+The following example traverses a folder, picks up all the .cpp files and count the number of lines each file contains.
+
+```VB
+Sub CountLines(oFile As File)
+    Dim oTextStream As TextStream
+    Dim lineCount As Long: lineCount = 0
+
+    Set oTextStream = oFile.OpenAsTextStream(ForReading)
+
+    Do While Not (oTextStream.AtEndOfStream)
+        oTextStream.ReadLine
+        lineCount = lineCount + 1
+    Loop
+
+    fileNum = fileNum + 1
+End Sub
+
+Sub Traverse(currentFolder As Folder)
+    Dim oFile As File
+    Dim oFolder As Folder
+    
+    ' Gets the list of .cpp files in the current folder
+    For Each oFile In currentFolder.Files
+        If (oFile.Type = "CPP File") Then
+        ' Code goes here...
+        End If
+    Next
+    
+    ' Recurse in each folder
+    For Each oFolder In currentFolder.SubFolders
+        Call Traverse(oFolder)
+    Next
+End Sub
+
+Public Sub Test()
+    Dim oFS As Scripting.ileSystemObject
+    Set oFS = New FileSystemObject
+    
+    Call Traverse(oFS.GetFolder("..."))
+    
+    Set oFS = Nothing
+End Sub
+```
+
+### Copying files & folders
+```VB
+Dim ofs As New FileSystemObject
+ofs.CopyFile "Source File", "Destination File"
+
+Set ofs = Nothing
+```
+
+The FileSystemObject also exposes other interesting methods like to copy folders, create folders etc.
+
+### Connection to Database
+Connecting to the local MS Access database in VBA
+Reference: https://msdn.microsoft.com/en-us/library/office/ff835631.aspx
+
+```VB
+Dim db As DAO.Database
+Dim rs As DAO.Recordset
+Dim strSQL As String
+
+' Use the current db
+Set db = CurrentDb
+
+' Build the sql query
+strSQL = "SELECT * FROM Person"
+
+' Execute the query
+Set rs = db.OpenRecordset(strSQL)
+
+' Traversing the dataset result
+Do While Not rs.EOF
+    Debug.Print rs!Id & " " & rs!firstname & " " & rs!familyname
+    rs.MoveNext
+Loop
+
+Debug.Print rs.RecordCount
+
+' Cleaning up
+rs.Close
+db.Close
+```
+
+## Dealing with MS Office & PDF files
+### Microsoft Excel
+#### Creating an Excel File
+```VB
+Dim oXlsxApplication As Excel.Application
+Dim oXlsxWorkbook As Excel.Workbook
+Dim oXlsxWorksheet As Excel.Worksheet
+
+Set oXlsxApplication = New Excel.Application
+Set oXlsxWorkbook = oXlsxApplication.Workbooks.Add
+Set oXlsxWorksheet = oXlsxWorkbook.Sheets.Add
+
+' Code goes here
+' ...
+
+Set oXlsxApplication = Nothing
+Set oXlsxWorkbook = Nothing
+Set oXlsxWorksheet = Nothing
+```
+
+## Microsoft Word
+### Creating a Word Document
+```VB
+Dim oWordApplication As Word.Application
+Dim oWordDocument As Word.Document
+
+Set oWordApplication = New Word.Application
+Set oWordDocument = oWordApplication.Documents.Add
+
+With oWordDocument
+    .Content.InsertAfter "This is a test"
+End With
+
+oWordApplication.Visible = True
+```
+
+## Outlook
+### References
+To use the outlook object, make sure the “Microsoft Outlook 15.0 Object Library” is added as reference.
+
+<< Insert here the screenshot >>
+
+### Sending emails via Outlook
+```VB
+Dim locObjOutlook As Outlook.Application
+Dim locObjOutlookItem As Outlook.MailItem
+Dim locObjOutlookItemCopy As Outlook.MailItem
+Dim htmlBody As String: htmlBody = ""
+
+Set locObjOutlook = New Outlook.Application
+Set locObjOutlookItem = locObjOutlook.CreateItem(olMailItem)
+
+locObjOutlookItem.BodyFormat = olFormatHTML
+htmlBody = htmlBody & "<html>"
+htmlBody = htmlBody & " <head>"
+.
+.
+htmlBody = htmlBody & " </head>"
+htmlBody = htmlBody & " <body>"
+.
+.
+htmlBody = htmlBody & " </body>"
+htmlBody = htmlBody & "</html>"
+
+locObjOutlookItem.htmlBody = htmlBody
+locObjOutlookItem.Display ' displays the email first
+Set locObjOutlook = Nothing
+```
+
+## Creating a PDF File
+We can simulate the creation of a pdf file by first creating an office file and then using the “Save” command to save it as
+a pdf.
+For saving a file under the pdf format, we use file format = 17.
+
+```VB
+Dim oWordApplication As Word.Application
+Dim oWordDocument As Word.Document
+
+Set oWordApplication = New Word.Application
+Set oWordDocument = oWordApplication.Documents.Add
+
+With oWordDocument
+    .Content.InsertAfter "This is a test"
+    .SaveAs2 "C:\Users\x76544\" & "myDoc.pdf", FileFormat:=17
+End With
+
+oWordDocument.Close
+
+Set oWordApplication = Nothing
+```
