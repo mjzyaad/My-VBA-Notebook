@@ -1,6 +1,7 @@
 # My VBA Notebook
 A collection of VBA tips - easy to follow, with snippets to copy & paste
 
+<!-- 
 # Contents
 [Coding Best Practices](#coding-best-practices)
 [Force variable declarations](#force-variable-declarations)
@@ -71,6 +72,7 @@ Executing a command on selected files
 Useful techniques
 Hiding sheet tabs
 Hiding Row numbers and Column numbers
+-->
 
 ## Coding Best Practices
 ### Force Variable declarations
@@ -641,7 +643,7 @@ oWordApplication.Visible = True
 ### References
 To use the outlook object, make sure the “Microsoft Outlook 15.0 Object Library” is added as reference.
 
-<< Insert here the screenshot >>
+![Microsoft outlook Object Library reference](/assets/images/vba_references.png)
 
 ### Sending emails via Outlook
 ```VB
